@@ -3,11 +3,13 @@ import { User } from "../models/user.modal";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import cloudinary from "../../utils/cloudinary";
+import { generateToken } from "../../utils/generateToken";
+import { generateVerificationCode } from "../../utils/generateVerificationCode";
 
 export const signup = async (req: Request, res: Response) => {
   try {
     const { fullName, email, password, contact } = req.body;
-    let user = await User.findOne(email);
+    let user = await User.findOne({email});
     if (user) {
       return res.status(400).json({
         success: false,
@@ -15,15 +17,16 @@ export const signup = async (req: Request, res: Response) => {
       });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const verificationToken = ""; //generateVerification()
+    const verificationToken = generateVerificationCode()
     user = await User.create({
       fullName,
       email,
+      contact,
       password: hashedPassword,
       verificationToken,
       verificationTokenExpiresAt: Date.now() + 24 * 60 * 60,
     });
-    // generateToken(req, user)
+    generateToken(res, user)
     // await sendVerificationEmail(email, verificationToken)
     const userWithoutPassword = await User.findOne({ email }).select(
       "-password"
